@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/arfanragil/testing-apps.git
     targetRevision: main
-    path: testing-apps
+    path:
   destination:
     server: https://kubernetes.default.svc
     namespace: staging

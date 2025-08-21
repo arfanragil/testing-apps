@@ -1,36 +1,29 @@
-FROM php:8.1-apache
+# Stage 1: Build the application
+FROM golang:1.22.4-alpine AS builder
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    libzip-dev \
-    zip \
-    unzip \
-    && docker-php-ext-install zip pdo pdo_mysql
+# Set the working directory inside the container
+WORKDIR /app
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Copy go.mod and go.sum to the working directory
+COPY go.mod go.sum ./
 
-# Copy PHP configuration
-COPY docker/php.ini /usr/local/etc/php/conf.d/app.ini
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+RUN go mod download
 
-# Set working directory
-WORKDIR /var/www/html
+# Copy the source code
+COPY . .
 
-# Copy application code
-COPY laravel-app/ /var/www/html/
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main .
 
-# Create public directory if it doesn't exist
-RUN mkdir -p /var/www/html/public
+# Stage 2: Run the application
+FROM scratch
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html
+# Copy the binary from the builder stage
+COPY --from=builder /app/main /app/main
 
-# Apache serves from /var/www/html/public by default
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}/../!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+# Expose port 8080
+EXPOSE 8080
 
-# Expose port 80
-EXPOSE 80
-
-CMD ["apache2-foreground"]
+# Command to run the executable
+ENTRYPOINT ["/app/main"]
