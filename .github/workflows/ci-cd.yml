@@ -88,8 +88,8 @@ jobs:
           git config --global user.name "GitHub Actions"
 
           # Clone the manifest repository
-          git clone https://${{ secrets.REPO_TOKEN }}@github.com/arfanragil/manifest.git
-          cd manifest
+          git clone https://${{ secrets.REPO_TOKEN }}@github.com/arfanragil/testing-apps-manifest.git
+          cd testing-apps-manifest
 
           # Create directory structure if it doesn't exist
           mkdir -p testing-apps
